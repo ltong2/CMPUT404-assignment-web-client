@@ -40,13 +40,22 @@ class HTTPClient(object):
         # use sockets!
 	if port == None:
 		port=80
+	if host == None:
+		host ="localhost"
 	con=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	con.connect((host,port))
+	try:
+		con.connect((host,port))
+	except:
+		print("Connection failed, host name: \n"+ host+" with port "+str(port))
+		sys.exit()
         return con
 
     def get_code(self, data):
 	var=data.split()
-	num=int(var[1])
+	try:
+		num=int(var[1])
+	except:
+		num=200
         return num
 
     def get_headers(self,data):
@@ -55,8 +64,12 @@ class HTTPClient(object):
         return num1
 
     def get_body(self, data):
-	var=data.split("\r\n\r\n",2)
-	num2=var[1]
+	try:
+		var=data.split("\r\n\r\n",2)
+		num2=var[1]
+	except:
+		var=data.split("<head>")
+		num2=var[1]
         return num2
 
     # read everything from the socket
@@ -84,7 +97,8 @@ class HTTPClient(object):
 
 	url_breake=urlparse(url)
 
-	reply="GET "+url_breake.path+" HTTP/1.1\r\nHost: "+url_breake.hostname+"\r\nAccept: */*\r\nConnection: close\r\n\r\n" 
+
+	reply="GET %s HTTP/1.1\r\nHost: %s\r\nAccept: */*\r\nConnection: close\r\n\r\n" % (url_breake.path,url_breake.hostname) 
 	res=self.send_reponse(url_breake.hostname,url_breake.port,reply)
 
 	return HTTPRequest(self.get_code(res), self.get_body(res))
@@ -98,7 +112,8 @@ class HTTPClient(object):
 	else:
 		con = ""
 
-	reply="POST "+url_breake.path+" HTTP/1.1\r\nHost: "+url_breake.hostname+"\r\nAccept: */*\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: "+str(len(con))+"\r\n\r\n"+con+"\r\n" 
+
+	reply = "POST %s HTTP/1.1\r\nHost: %s\r\nAccept: */*\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: %d\r\n\r\n%s\r\n" % (url_breake.path,url_breake.hostname,len(con),con)
 	res=self.send_reponse(url_breake.hostname,url_breake.port,reply)
 
 	return HTTPRequest(self.get_code(res), self.get_body(res))	
@@ -116,6 +131,6 @@ if __name__ == "__main__":
         help()
         sys.exit(1)
     elif (len(sys.argv) == 3):
-        print client.command( sys.argv[1], sys.argv[2] )
+        print client.command( sys.argv[2], sys.argv[1] )
     else:
-        print client.command( command, sys.argv[1] )     
+        print client.command( sys.argv[1],command )     
